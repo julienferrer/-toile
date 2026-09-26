@@ -306,4 +306,13 @@ export function generateUniverse(): Star[] {
   return stars;
 }
 
-export const generateFullUniverse = generateUniverse;
+export function generateFullUniverse() {
+  const stars = generateUniverse();
+  return Object.assign(stars, {
+    stars,
+    constellations: [] as any[],
+    satellites: [] as any[],
+    blackHoles: [] as any[],
+    planets: [] as any[],
+  });
+}

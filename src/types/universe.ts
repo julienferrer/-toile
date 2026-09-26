@@ -108,3 +108,36 @@ export interface UniverseState {
   discoveredCount: number;
   totalStoriesCount: number;
 }
+
+export interface Constellation {
+  id: string;
+  name: string;
+  latinName?: string;
+  starIds: string[];
+  theme: string;
+  description: string;
+  discovered?: boolean;
+}
+
+export interface Satellite {
+  id: string;
+  name: string;
+  quote: string;
+  subtext?: string;
+  speed: number;
+  orbitRadius: number;
+}
+
+export interface BlackHole {
+  id: string;
+  title: string;
+  thought: string;
+  depth: number;
+}
+
+export interface Planet {
+  id: string;
+  name: string;
+  lifeStage: string;
+  description: string;
+}
