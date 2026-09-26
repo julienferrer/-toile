@@ -19,12 +19,15 @@ const STAR_PALETTE = [
   '#CDE0F7', // Deep sky tint
 ];
 
-/**
- * Samples a point uniformly in a 2D circular disk annulus [rMin, rMax].
- * Using r = sqrt(rMin^2 + U * (rMax^2 - rMin^2)) guarantees flat, uniform surface density,
- * preventing any artificial bunching at the center.
- */
-function sampleUniformDisk(rMin: number, rMax: number): { x: number; y: number } {
+// Concentric celestial zones guaranteeing rich visibility from startup to deep space
+const ZONES = [
+  { rMin: 70, rMax: 520 },    // Zone 1: Starting screen field of view
+  { rMin: 520, rMax: 1350 },  // Zone 2: Inner-mid exploration
+  { rMin: 1350, rMax: 2380 }, // Zone 3: Outer expanse
+  { rMin: 2380, rMax: 3450 }, // Zone 4: Far cosmic frontier
+];
+
+function sampleAnnulus(rMin: number, rMax: number): { x: number; y: number } {
   const angle = Math.random() * Math.PI * 2;
   const r = Math.sqrt(rMin * rMin + Math.random() * (rMax * rMax - rMin * rMin));
   return {
@@ -37,12 +40,16 @@ export function generateUniverse(): Star[] {
   const stars: Star[] = [];
   let starCounter = 0;
 
-  // Track placed interactive coordinates to prevent overlapping stars
+  // Track placed interactive coordinates to prevent collision
   const placedInteractiveCenters: { x: number; y: number }[] = [];
 
-  function getSpacedInteractivePosition(rMin: number, rMax: number, minDistance = 75): { x: number; y: number } {
-    for (let attempt = 0; attempt < 40; attempt++) {
-      const pos = sampleUniformDisk(rMin, rMax);
+  function getSpacedInteractivePosition(
+    rMin: number,
+    rMax: number,
+    minDistance = 65
+  ): { x: number; y: number } {
+    for (let attempt = 0; attempt < 35; attempt++) {
+      const pos = sampleAnnulus(rMin, rMax);
       const isTooClose = placedInteractiveCenters.some(
         (p) => Math.hypot(p.x - pos.x, p.y - pos.y) < minDistance
       );
@@ -51,19 +58,28 @@ export function generateUniverse(): Star[] {
         return pos;
       }
     }
-    const fallback = sampleUniformDisk(rMin, rMax);
+    const fallback = sampleAnnulus(rMin, rMax);
     placedInteractiveCenters.push(fallback);
     return fallback;
   }
 
-  // 1. Generate Binary Star Pairs (Couples d'étoiles gravitant l'une autour de l'autre)
-  // Distributed equitably from 200px to 3300px across the entire cosmos
-  BINARY_STORY_PAIRS.forEach((pair) => {
-    const centerPair = getSpacedInteractivePosition(200, 3300, 130);
-    const orbitRadius = (pair.orbitRadius || 60) * 0.5; // Radius of each star from barycenter
+  // 1. Generate Binary Star Pairs equitably across all 4 zones
+  // 5 in Zone 1, 6 in Zone 2, 5 in Zone 3, 4 in Zone 4
+  const binaryZoneDistribution = [
+    ...Array(5).fill(0),
+    ...Array(6).fill(1),
+    ...Array(5).fill(2),
+    ...Array(4).fill(3),
+  ];
+
+  BINARY_STORY_PAIRS.forEach((pair, idx) => {
+    const zoneIndex = binaryZoneDistribution[idx % binaryZoneDistribution.length];
+    const { rMin, rMax } = ZONES[zoneIndex];
+    const centerPair = getSpacedInteractivePosition(rMin, rMax, 110);
+
+    const orbitRadius = (pair.orbitRadius || 60) * 0.5;
     const pairAngle = Math.random() * Math.PI * 2;
 
-    // Distinct orbit speeds depending on relationship type
     const orbitSpeed =
       pair.relationType === 'diverging'
         ? 0.09 + Math.random() * 0.05
@@ -71,7 +87,6 @@ export function generateUniverse(): Star[] {
         ? 0.07 + Math.random() * 0.05
         : 0.15 + Math.random() * 0.08;
 
-    // Harmonious/Separation/Distant color variations
     let colorA = '#FDF6E8';
     let colorB = '#E8F0FE';
     if (pair.relationType === 'diverging') {
@@ -87,8 +102,8 @@ export function generateUniverse(): Star[] {
       x: centerPair.x + Math.cos(pairAngle) * orbitRadius,
       y: centerPair.y + Math.sin(pairAngle) * orbitRadius,
       z: 1.1 + Math.random() * 0.3,
-      baseSize: 3.3,
-      baseBrightness: 0.92,
+      baseSize: 3.4,
+      baseBrightness: 0.95,
       color: colorA,
       twinkleSpeed: 0.02 + Math.random() * 0.02,
       twinklePhase: Math.random() * Math.PI * 2,
@@ -113,11 +128,11 @@ export function generateUniverse(): Star[] {
       x: centerPair.x + Math.cos(pairAngle + Math.PI) * orbitRadius,
       y: centerPair.y + Math.sin(pairAngle + Math.PI) * orbitRadius,
       z: 1.1 + Math.random() * 0.3,
-      baseSize: 3.1,
-      baseBrightness: 0.9,
+      baseSize: 3.2,
+      baseBrightness: 0.92,
       color: colorB,
       twinkleSpeed: 0.02 + Math.random() * 0.02,
-      twinklePhase: starA.twinklePhase + Math.PI / 2, // Slight offset twinkle
+      twinklePhase: starA.twinklePhase + Math.PI / 2,
       type: 'binary',
       story: {
         id: pair.idB,
@@ -137,9 +152,11 @@ export function generateUniverse(): Star[] {
     stars.push(starA, starB);
   });
 
-  // 2. Generate Ephemeral Stars (Vies éphémères réparties équitablement)
+  // 2. Generate Ephemeral Stars (3 in each of the 4 zones)
   for (let i = 0; i < 12; i++) {
-    const pos = getSpacedInteractivePosition(250, 3350, 95);
+    const zoneIndex = i % 4;
+    const { rMin, rMax } = ZONES[zoneIndex];
+    const pos = getSpacedInteractivePosition(rMin, rMax, 80);
     const starId = `ephemeral-${i}`;
 
     stars.push({
@@ -149,27 +166,28 @@ export function generateUniverse(): Star[] {
       z: 1.0 + Math.random() * 0.4,
       baseSize: 3.4,
       baseBrightness: 0.95,
-      color: '#EDE8FF',
-      twinkleSpeed: 0.03,
+      color: '#E0E7FF',
+      twinkleSpeed: 0.03 + Math.random() * 0.02,
       twinklePhase: Math.random() * Math.PI * 2,
       type: 'ephemeral',
       story: {
         id: starId,
         text: EPHEMERAL_TEXTS.initial,
-        category: 'éphémère',
-        categoryLabel: 'Lumière éphémère',
-        subtext: EPHEMERAL_TEXTS.afterglow,
+        category: 'ordinaire',
+        categoryLabel: 'Éphémère',
       },
       hasStory: true,
       trailLength: 3,
-      driftVx: (Math.random() - 0.5) * 0.05,
-      driftVy: (Math.random() - 0.5) * 0.05,
+      driftVx: (Math.random() - 0.5) * 0.04,
+      driftVy: (Math.random() - 0.5) * 0.04,
     });
   }
 
-  // 3. Generate Pivotal / Bright Stars (Grandes existences réparties sur toute la carte)
+  // 3. Generate Pivotal / Bright Stars distributed across all zones
   PIVOTAL_STORIES.forEach((storyData, idx) => {
-    const pos = getSpacedInteractivePosition(150, 3400, 80);
+    const zoneIndex = idx % 4;
+    const { rMin, rMax } = ZONES[zoneIndex];
+    const pos = getSpacedInteractivePosition(rMin, rMax, 70);
     const id = `pivotal-${idx}`;
 
     stars.push({
@@ -189,14 +207,16 @@ export function generateUniverse(): Star[] {
       },
       hasStory: true,
       trailLength: 4,
-      driftVx: (Math.random() - 0.5) * 0.04,
-      driftVy: (Math.random() - 0.5) * 0.04,
+      driftVx: (Math.random() - 0.5) * 0.03,
+      driftVy: (Math.random() - 0.5) * 0.03,
     });
   });
 
-  // 4. Generate Ordinary Moment Stars (Petites étoiles ordinaires réparties partout)
+  // 4. Generate Ordinary Moment Stars distributed across all zones
   ORDINARY_STORIES.forEach((storyData, idx) => {
-    const pos = getSpacedInteractivePosition(150, 3450, 68);
+    const zoneIndex = idx % 4;
+    const { rMin, rMax } = ZONES[zoneIndex];
+    const pos = getSpacedInteractivePosition(rMin, rMax, 60);
     const id = `ordinary-${idx}`;
 
     stars.push({
@@ -204,8 +224,8 @@ export function generateUniverse(): Star[] {
       x: pos.x,
       y: pos.y,
       z: 0.7 + Math.random() * 0.5,
-      baseSize: 2.3 + Math.random() * 0.8,
-      baseBrightness: 0.78,
+      baseSize: 2.4 + Math.random() * 0.8,
+      baseBrightness: 0.82,
       color: '#E8EFFB',
       twinkleSpeed: 0.015 + Math.random() * 0.02,
       twinklePhase: Math.random() * Math.PI * 2,
@@ -215,15 +235,15 @@ export function generateUniverse(): Star[] {
         ...storyData,
       },
       hasStory: true,
-      trailLength: 1,
-      driftVx: (Math.random() - 0.5) * 0.03,
-      driftVy: (Math.random() - 0.5) * 0.03,
+      trailLength: 2,
     });
   });
 
-  // 5. Generate Sparkling Memory Stars (Étoiles scintillantes réparties partout)
+  // 5. Generate Sparkling Memory Stars distributed across all zones
   SPARKLING_STORIES.forEach((storyData, idx) => {
-    const pos = getSpacedInteractivePosition(180, 3400, 75);
+    const zoneIndex = idx % 4;
+    const { rMin, rMax } = ZONES[zoneIndex];
+    const pos = getSpacedInteractivePosition(rMin, rMax, 65);
     const id = `sparkling-${idx}`;
 
     stars.push({
@@ -232,9 +252,9 @@ export function generateUniverse(): Star[] {
       y: pos.y,
       z: 0.9 + Math.random() * 0.6,
       baseSize: 2.8 + Math.random() * 1.0,
-      baseBrightness: 0.88,
+      baseBrightness: 0.9,
       color: '#F4EAFF',
-      twinkleSpeed: 0.06 + Math.random() * 0.05, // Faster shimmering
+      twinkleSpeed: 0.06 + Math.random() * 0.05,
       twinklePhase: Math.random() * Math.PI * 2,
       type: 'sparkling',
       story: {
@@ -242,42 +262,46 @@ export function generateUniverse(): Star[] {
         ...storyData,
       },
       hasStory: true,
-      trailLength: 2,
-      driftVx: (Math.random() - 0.5) * 0.04,
-      driftVy: (Math.random() - 0.5) * 0.04,
+      trailLength: 3,
     });
   });
 
-  // 6. Generate Background Anonymous Stars (2600 stars distributed uniformly across the entire universe)
-  // Uniform area density: r = sqrt(random) * UNIVERSE_RADIUS
-  const totalBackground = 2600;
-  for (let i = 0; i < totalBackground; i++) {
-    starCounter++;
-    const angle = Math.random() * Math.PI * 2;
-    const r = Math.sqrt(Math.random()) * UNIVERSE_RADIUS;
-    const z = 0.2 + Math.random() * 1.5; // Depth factor
+  // 6. Generate Background Anonymous Stars (2600 stars distributed across all zones)
+  // Ensures visible star density at center and extends rich field to cosmos boundary
+  const bgZoneCounts = [550, 750, 750, 550];
+  bgZoneCounts.forEach((count, zoneIdx) => {
+    const { rMin, rMax } = ZONES[zoneIdx];
+    for (let i = 0; i < count; i++) {
+      starCounter++;
+      const pos = sampleAnnulus(rMin, rMax);
+      const z = 0.2 + Math.random() * 1.5;
 
-    const isMidDepth = z > 0.8;
-    const baseSize = isMidDepth ? 1.2 + Math.random() * 1.4 : 0.6 + Math.random() * 0.8;
-    const color = STAR_PALETTE[Math.floor(Math.random() * STAR_PALETTE.length)];
+      const isMidDepth = z > 0.8;
+      const baseSize = isMidDepth
+        ? 1.3 + Math.random() * 1.2
+        : 0.7 + Math.random() * 0.8;
 
-    stars.push({
-      id: `star-bg-${starCounter}`,
-      x: Math.cos(angle) * r,
-      y: Math.sin(angle) * r,
-      z,
-      baseSize,
-      baseBrightness: 0.3 + Math.random() * 0.5,
-      color,
-      twinkleSpeed: 0.01 + Math.random() * 0.03,
-      twinklePhase: Math.random() * Math.PI * 2,
-      type: 'ordinary',
-      hasStory: false,
-      trailLength: Math.random() > 0.85 ? 1 + Math.floor(Math.random() * 3) : 0,
-      driftVx: (Math.random() - 0.5) * 0.02,
-      driftVy: (Math.random() - 0.5) * 0.02,
-    });
-  }
+      const baseBrightness = isMidDepth
+        ? 0.45 + Math.random() * 0.45
+        : 0.2 + Math.random() * 0.35;
+
+      const color = STAR_PALETTE[Math.floor(Math.random() * STAR_PALETTE.length)];
+
+      stars.push({
+        id: `bg-${starCounter}`,
+        x: pos.x,
+        y: pos.y,
+        z,
+        baseSize,
+        baseBrightness,
+        color,
+        twinkleSpeed: 0.01 + Math.random() * 0.035,
+        twinklePhase: Math.random() * Math.PI * 2,
+        type: 'ordinary',
+        hasStory: false,
+      });
+    }
+  });
 
   return stars;
 }

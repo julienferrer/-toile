@@ -201,8 +201,8 @@ export const CosmosCanvas = forwardRef<CosmosCanvasHandle, CosmosCanvasProps>(
     initialZoom: 0.9,
   });
 
-  // Genesis appearance (gradual fade-in of universe on load)
-  const genesisProgressRef = useRef<number>(0);
+  // Genesis appearance (visible immediately, smooth blossom)
+  const genesisProgressRef = useRef<number>(0.6);
   const animationFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(performance.now());
 
@@ -242,7 +242,8 @@ export const CosmosCanvas = forwardRef<CosmosCanvasHandle, CosmosCanvasProps>(
 
     const render = (time: number) => {
       if (!isRunning) return;
-      const dt = Math.min((time - lastTimeRef.current) / 1000, 0.1);
+      const prevTime = lastTimeRef.current || time;
+      const dt = Math.max(0.001, Math.min((time - prevTime) / 1000, 0.1));
       lastTimeRef.current = time;
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
