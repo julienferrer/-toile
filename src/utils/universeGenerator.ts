@@ -281,3 +281,5 @@ export function generateUniverse(): Star[] {
 
   return stars;
 }
+
+export const generateFullUniverse = generateUniverse;

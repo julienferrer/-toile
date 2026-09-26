@@ -924,3 +924,5 @@ export const ENDING_VERSES = [
   "Et maintenant, quelqu'un vient de commencer à explorer.",
 ];
 
+export const EARTH_REVELATION_SEQUENCE = ENDING_VERSES;
+
