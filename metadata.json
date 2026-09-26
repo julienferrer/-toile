@@ -1,0 +1,6 @@
+{
+  "name": "Les personnes sont des étoiles",
+  "description": "Une expérience artistique interactive et contemplative où chaque étoile du cosmos représente une existence humaine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
