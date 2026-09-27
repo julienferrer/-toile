@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { Star } from '../types/universe';
+import { Star, Constellation, Satellite, BlackHole, Planet } from '../types/universe';
 import { spaceAudio } from '../audio/spaceAudio';
 import {
   SHOOTING_STAR_STORIES,
@@ -25,6 +25,15 @@ interface CosmosCanvasProps {
   onCaughtShootingStar: (data: { text: string; isNostalgic?: boolean }) => void;
   onMissedShootingStar: () => void;
   onFinalShootingStarComplete: () => void;
+  constellations?: Constellation[];
+  satellites?: Satellite[];
+  blackHoles?: BlackHole[];
+  planets?: Planet[];
+  onSelectConstellation?: (constellation: Constellation) => void;
+  onSelectSatellite?: (satellite: Satellite) => void;
+  onSelectBlackHole?: (blackHole: BlackHole) => void;
+  onSelectPlanet?: (planet: Planet) => void;
+  onAutoTriggerEarthRevelation?: () => void;
 }
 
 interface ActiveShootingStar {
@@ -85,7 +94,7 @@ export const CosmosCanvas = forwardRef<CosmosCanvasHandle, CosmosCanvasProps>(
     // Shooting stars state
     const shootingStarsRef = useRef<ActiveShootingStar[]>([]);
     const dissipatingSparksRef = useRef<{ x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string }[]>([]);
-    const nextShootingStarTimeRef = useRef<number>(performance.now() + 8000);
+    const nextShootingStarTimeRef = useRef<number>(performance.now() + 3500);
     const hasTriggeredFinalShootingStarRef = useRef<boolean>(false);
 
     // Spawning function for shooting stars
@@ -124,7 +133,7 @@ export const CosmosCanvas = forwardRef<CosmosCanvasHandle, CosmosCanvasProps>(
         text = SHOOTING_STAR_STORIES[Math.floor(Math.random() * SHOOTING_STAR_STORIES.length)];
       }
 
-      const duration = isFinal ? 8.5 : 4.6 + Math.random() * 2.2;
+      const duration = isFinal ? 6.5 : 2.2 + Math.random() * 0.9;
       const color = isNostalgic ? '#FDE68A' : '#FFFFFF';
 
       shootingStarsRef.current.push({
@@ -588,12 +597,7 @@ export const CosmosCanvas = forwardRef<CosmosCanvasHandle, CosmosCanvasProps>(
             spawnShootingStar(true);
             nextShootingStarTimeRef.current = time + 75000;
           } else if (shootingStarsRef.current.length === 0) {
-            const interval =
-              discoveredCount < 4
-                ? 18000 + Math.random() * 12000
-                : discoveredCount < 9
-                ? 28000 + Math.random() * 16000
-                : 45000 + Math.random() * 25000;
+            const interval = 8000 + Math.random() * 10000;
             spawnShootingStar(false);
             nextShootingStarTimeRef.current = time + interval;
           }

@@ -2,6 +2,8 @@ export type StarType = 'bright' | 'ordinary' | 'sparkling' | 'ephemeral' | 'bina
 
 export type StoryCategory = 
   | 'naissance'
+  | 'enfance'
+  | 'grandir'
   | 'amour'
   | 'famille'
   | 'amitié'
@@ -17,6 +19,9 @@ export type StoryCategory =
   | 'échec'
   | 'souvenirs'
   | 'rêves'
+  | 'réflexion'
+  | 'nostalgie'
+  | 'couple'
   | 'ordinaire'
   | 'lien'
   | 'éphémère';
@@ -24,10 +29,12 @@ export type StoryCategory =
 export interface Story {
   id: string;
   text: string;
+  title?: string;
   category: StoryCategory;
   categoryLabel?: string;
   subtext?: string;
   companionStoryId?: string; // For binary stars
+  sharedInsight?: string; // Philosophical revelation when observing the couple
   isOrdinary?: boolean;
   isPivotal?: boolean;
 }
@@ -114,30 +121,41 @@ export interface Constellation {
   name: string;
   latinName?: string;
   starIds: string[];
-  theme: string;
-  description: string;
+  theme?: string;
+  phrase?: string;
+  philosophy?: string;
+  description?: string;
+  dynamicMessage?: string;
   discovered?: boolean;
 }
 
 export interface Satellite {
   id: string;
   name: string;
-  quote: string;
+  quote?: string;
+  memoryText?: string;
   subtext?: string;
-  speed: number;
-  orbitRadius: number;
+  speed?: number;
+  orbitRadius?: number;
 }
 
 export interface BlackHole {
   id: string;
-  title: string;
-  thought: string;
-  depth: number;
+  name?: string;
+  subtitle?: string;
+  phrase1?: string;
+  phrase2?: string;
+  title?: string;
+  thought?: string;
+  depth?: number;
 }
 
 export interface Planet {
   id: string;
   name: string;
-  lifeStage: string;
-  description: string;
+  quote?: string;
+  color?: string;
+  glowColor?: string;
+  lifeStage?: string;
+  description?: string;
 }
